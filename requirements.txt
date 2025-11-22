@@ -1,0 +1,10 @@
+gspread 
+oauth2client 
+python-dotenv 
+groq 
+pandas 
+pytest 
+pytest-cov 
+matplotlib 
+seaborn 
+openpyxl
