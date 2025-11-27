@@ -23,3 +23,8 @@ service_account.json
 # Test coverage
 .coverage
 htmlcov/
+
+
+# Mini tests files
+test_connection.py
+test_groq.py
