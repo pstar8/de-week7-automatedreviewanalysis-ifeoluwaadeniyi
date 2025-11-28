@@ -1,5 +1,5 @@
 from src.utils import connect_to_google_sheets, call_groq_llm
-from src.etl import extract_raw_data, clean_data, load_to_staging
+from src.etl import extract_raw_data, clean_data, load_to_staging, process_reviews_with_llm, load_to_processed
 
 
 def run_etl_pipeline(spreadsheet):
@@ -22,6 +22,33 @@ def run_etl_pipeline(spreadsheet):
    
     return clean_df
 
+    
+def run_llm_pipeline(spreadsheet, cleaned_data):
+    """  Runs the LLM processing pipeline  """
+    print("🤖 STARTING LLM PROCESSING PIPELINE")
+
+    processed_df = process_reviews_with_llm(cleaned_data)
+    if processed_df is None:
+        print("LLM Pipeline failed at processing step")
+        return None
+    
+    success = load_to_processed(spreadsheet, processed_df)
+    if not success:
+        print("LLM Pipeline failed at loading step")
+        return None
+    
+    print("✅ LLM PROCESSING PIPELINE COMPLETED SUCCESSFULLY!")
+    
+    print("\n Analytics...")
+    print(" Skipping for now (will implement in Phase 8)")
+    
+    print("✅ PIPELINE COMPLETED!")
+    print(f"\n Processed {len(cleaned_data)} reviews")
+    print(f" Check your Google Sheet: {spreadsheet.url}")
+    
+    return True
+
+
 
 def run_full_pipeline():
     """  Runs the complete analysis pipeline: """
@@ -40,18 +67,16 @@ def run_full_pipeline():
         print(" Pipeline failed: ETL process encountered errors")
         return False
     
-    print("\n LLM Processing...")
-    print("Skipping for now (will implement in Phase 6)")
+    print("\n Step 3: Running LLM Processing Pipeline...")
+    processed_data = run_llm_pipeline(spreadsheet, cleaned_data)
     
-    print("\n Analytics...")
+    if processed_data is None:
+        print(" Pipeline failed: LLM processing encountered errors")
+        return False
+    
+    print("\n📊 Step 4: Analytics...")
     print(" Skipping for now (will implement in Phase 8)")
-    
-    print("✅ PIPELINE COMPLETED!")
-    print(f"\n Processed {len(cleaned_data)} reviews")
-    print(f" Check your Google Sheet: {spreadsheet.url}")
-    
-    return True
 
-
+    print("\n🎉 FULL PIPELINE COMPLETED SUCCESSFULLY!")
 if __name__ == "__main__":
     run_full_pipeline()

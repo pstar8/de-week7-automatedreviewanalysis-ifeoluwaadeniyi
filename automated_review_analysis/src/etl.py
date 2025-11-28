@@ -125,3 +125,102 @@ def load_to_staging(spreadsheet, df):
     except Exception as e:
         print(f"❌ Error loading to staging: {e}")
         return False
+    
+
+
+def process_reviews_with_llm(df, review_column='Review Text'):
+    """  Processes reviews through Groq LLM to get sentiment and summary.  """
+    try:
+        from src.utils import call_groq_llm
+        
+        df_processed = df.copy()
+        
+        # Initialize new columns
+        df_processed['AI Sentiment'] = ''
+        df_processed['AI Summary'] = ''
+        df_processed['Action Needed?'] = ''
+        
+        total_reviews = len(df_processed)
+        processed_count = 0
+        skipped_count = 0
+        
+        print(f"\n Total reviews to process: {total_reviews}")
+        print("⏳ This may take a few minutes...\n")
+        
+        # Process each review
+        for idx, row in df_processed.iterrows():
+            review_text = row.get(review_column, '')
+            
+            if pd.isna(review_text) or str(review_text).strip() == '' or str(review_text).lower() == 'nan':
+                df_processed.at[idx, 'AI Sentiment'] = 'Neutral'
+                df_processed.at[idx, 'AI Summary'] = 'No review text provided'
+                df_processed.at[idx, 'Action Needed?'] = 'No'
+                skipped_count += 1
+            else:
+                result = call_groq_llm(str(review_text))
+                
+                if result:
+                    df_processed.at[idx, 'AI Sentiment'] = result['sentiment']
+                    df_processed.at[idx, 'AI Summary'] = result['summary']
+                    
+                    if result['sentiment'] == 'Negative':
+                        df_processed.at[idx, 'Action Needed?'] = 'Yes'
+                    else:
+                        df_processed.at[idx, 'Action Needed?'] = 'No'
+                    
+                    processed_count += 1
+                else:
+                    df_processed.at[idx, 'AI Sentiment'] = 'Neutral'
+                    df_processed.at[idx, 'AI Summary'] = 'Error processing review'
+                    df_processed.at[idx, 'Action Needed?'] = 'No'
+            
+            if (idx + 1) % 10 == 0:
+                print(f"   Processed {idx + 1}/{total_reviews} reviews...")
+        
+        print(f"\n✅ LLM Processing complete!")
+        print(f"   ✓ Processed with LLM: {processed_count}")
+        print(f"   ⊘ Skipped (empty): {skipped_count}")
+        
+        sentiment_counts = df_processed['AI Sentiment'].value_counts()
+        print(f"\n Sentiment Distribution:")
+        for sentiment, count in sentiment_counts.items():
+            percentage = (count / total_reviews) * 100
+            print(f"   {sentiment}: {count} ({percentage:.1f}%)")
+        
+        return df_processed
+    
+    except Exception as e:
+        print(f"❌ Error processing reviews with LLM: {e}")
+        return df
+    
+def load_to_processed(spreadsheet, df):
+    """  Loads processed data (with LLM results) to processed worksheet (idempotent).  """
+    try:
+        processed_worksheet = spreadsheet.worksheet('processed')        
+        existing_data = processed_worksheet.get_all_values()
+        
+        if len(existing_data) > 1: 
+            print("⚠️  Processed worksheet already contains data")
+            print("   Clearing existing data for idempotent re-run...")
+            processed_worksheet.clear()
+        
+        data_to_upload = [df.columns.tolist()] + df.values.tolist()
+        
+        print(f"📝 Writing {len(df)} rows to processed worksheet...")
+        print(f"   Columns include: {', '.join(df.columns[-3:])}...")
+        
+        processed_worksheet.update(
+            range_name='A1',
+            values=data_to_upload
+        )
+        print(f"✅ Successfully loaded {len(df)} rows to processed!")
+        return True
+    
+    except gspread.exceptions.WorksheetNotFound:
+        print("❌ Error: 'processed' worksheet not found!")
+        print("   Make sure you have a worksheet named exactly 'processed'")
+        return False
+    
+    except Exception as e:
+        print(f"❌ Error loading to processed: {e}")
+        return False
