@@ -91,7 +91,7 @@ def call_groq_llm(review_text):
                     "content": prompt,
                 }
             ],
-            model="llama-3.3-70b-versatile",
+            model="openai/gpt-oss-20b",
             temperature=0.1,  # Very low for consistency
             max_tokens=150,
         )

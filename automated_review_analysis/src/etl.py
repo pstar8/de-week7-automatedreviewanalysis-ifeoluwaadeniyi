@@ -132,7 +132,8 @@ def process_reviews_with_llm(df, review_column='Review Text'):
     """  Processes reviews through Groq LLM to get sentiment and summary.  """
     try:
         from src.utils import call_groq_llm
-        
+        import time
+
         df_processed = df.copy()
         
         # Initialize new columns
@@ -169,6 +170,8 @@ def process_reviews_with_llm(df, review_column='Review Text'):
                         df_processed.at[idx, 'Action Needed?'] = 'No'
                     
                     processed_count += 1
+
+                    time.sleep(0.5)
                 else:
                     df_processed.at[idx, 'AI Sentiment'] = 'Neutral'
                     df_processed.at[idx, 'AI Summary'] = 'Error processing review'
