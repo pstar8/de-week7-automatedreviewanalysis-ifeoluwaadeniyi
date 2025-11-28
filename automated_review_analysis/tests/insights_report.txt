@@ -1,0 +1,19 @@
+======================================================================
+AUTOMATED REVIEW ANALYSIS - INSIGHTS REPORT
+======================================================================
+
+📊 OVERALL STATISTICS
+----------------------------------------------------------------------
+Total Reviews Analyzed: 10
+
+Sentiment Distribution:
+  • Positive: 7 (70.0%)
+  • Negative: 3 (30.0%)
+
+⚠️  Reviews Requiring Action: 3 (30.0%)
+
+🏆 TOP PERFORMING CLASSES
+----------------------------------------------------------------------
+
+💡 KEY INSIGHTS
+✓ Overall customer satisfaction is HIGH (>60% positive reviews)

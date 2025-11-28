@@ -44,8 +44,11 @@ def connect_to_google_sheets():
         print(f"Error connecting to Google Sheets: {e}")
         return None
 
+
 def call_groq_llm(review_text):
-    """ Sends review text to Groq LLM for sentiment analysis   """
+    """
+    Sends review text to Groq LLM for sentiment analysis.
+    """
     if not review_text or str(review_text).strip() == '' or str(review_text).lower() == 'nan':
         return {
             'sentiment': 'Neutral',
@@ -61,49 +64,73 @@ def call_groq_llm(review_text):
         # Initialize Groq client
         client = Groq(api_key=api_key)
         
-        prompt = f"""Analyze the following product review and provide:
-                    1. Sentiment: Classify as either "Positive", "Negative", or "Neutral"
-                    2. Summary: Provide a one-sentence summary of the review.
+        # Create a VERY clear prompt
+        prompt = f"""You are analyzing a product review. Read it carefully and respond with EXACTLY this format:
 
-        Review: "{review_text}"
+                SENTIMENT: [Choose ONLY one: Positive OR Negative OR Neutral]
+                SUMMARY: [Write one clear sentence summarizing the review]
 
-        Respond in this exact format:
-        Sentiment: [Positive/Negative/Neutral]
-        Summary: [Your one-sentence summary]"""
+                Review to analyze: "{review_text}"
+
+                Remember:
+                - Positive: Customer likes the product (good, great, love, recommend, etc.)
+                - Negative: Customer dislikes it (bad, terrible, disappointed, poor quality, etc.)
+                - Neutral: Mixed feelings or just describing facts
+
+                Your response:"""
         
         # Call Groq API
         chat_completion = client.chat.completions.create(
             messages=[
                 {
+                    "role": "system",
+                    "content": "You are a sentiment analysis expert. Always respond in the exact format requested."
+                },
+                {
                     "role": "user",
                     "content": prompt,
                 }
             ],
-            model="llama-3.3-70b-versatile",  
-            temperature=0.3, 
+            model="llama-3.3-70b-versatile",
+            temperature=0.1,  # Very low for consistency
             max_tokens=150,
         )
         
         # Extract response
         response_text = chat_completion.choices[0].message.content.strip()
         
-        # Parse the response
-        sentiment = 'Neutral'  
-        summary = review_text[:100] 
+        # Parse the response more robustly
+        sentiment = 'Neutral'  # Default
+        summary = review_text[:100] if len(review_text) > 100 else review_text
+        
+        # Try to parse line by line
         lines = response_text.split('\n')
         for line in lines:
-            if line.startswith('Sentiment:'):
-                sentiment_raw = line.replace('Sentiment:', '').strip()
-
-                if 'positive' in sentiment_raw.lower():
+            line = line.strip()
+            
+            # Look for SENTIMENT line
+            if line.upper().startswith('SENTIMENT:'):
+                sentiment_raw = line.split(':', 1)[1].strip().lower()
+                
+                # More flexible matching
+                if 'positive' in sentiment_raw:
                     sentiment = 'Positive'
-                elif 'negative' in sentiment_raw.lower():
+                elif 'negative' in sentiment_raw:
                     sentiment = 'Negative'
                 else:
                     sentiment = 'Neutral'
             
-            elif line.startswith('Summary:'):
-                summary = line.replace('Summary:', '').strip()
+            # Look for SUMMARY line
+            elif line.upper().startswith('SUMMARY:'):
+                summary = line.split(':', 1)[1].strip()
+        
+        # Fallback: if response doesn't follow format, try to infer sentiment
+        if sentiment == 'Neutral' and summary == review_text[:100]:
+            response_lower = response_text.lower()
+            if any(word in response_lower for word in ['positive', 'good', 'great', 'love', 'excellent']):
+                sentiment = 'Positive'
+            elif any(word in response_lower for word in ['negative', 'bad', 'poor', 'terrible', 'disappointed']):
+                sentiment = 'Negative'
         
         return {
             'sentiment': sentiment,
@@ -112,7 +139,8 @@ def call_groq_llm(review_text):
     
     except Exception as e:
         print(f"⚠️  Error calling Groq LLM: {e}")
+        # Return neutral sentiment on error
         return {
             'sentiment': 'Neutral',
-            'summary': f'Error processing review: {str(e)[:50]}'
+            'summary': f'Error processing review'
         }

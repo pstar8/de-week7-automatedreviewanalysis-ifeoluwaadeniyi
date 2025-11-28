@@ -1,0 +1,32 @@
+======================================================================
+AUTOMATED REVIEW ANALYSIS - INSIGHTS REPORT
+======================================================================
+
+📊 OVERALL STATISTICS
+----------------------------------------------------------------------
+Total Reviews Analyzed: 200
+
+Sentiment Distribution:
+  • Neutral: 188 (94.0%)
+  • Positive: 10 (5.0%)
+  • Negative: 2 (1.0%)
+
+⚠️  Reviews Requiring Action: 2 (1.0%)
+
+🏆 TOP PERFORMING CLASSES
+----------------------------------------------------------------------
+
+✅ Highest Positive Sentiment:
+  Class: Intimates
+  Positive Reviews: 20.00%
+
+Highest Negative Sentiment:
+  Class: Dresses
+  Negative Reviews: 5.41%
+
+➖ Highest Neutral Sentiment:
+  Class: Fine gauge
+  Neutral Reviews: 100.00%
+
+💡 KEY INSIGHTS
+✗ Customer satisfaction needs IMPROVEMENT (<40% positive reviews)
