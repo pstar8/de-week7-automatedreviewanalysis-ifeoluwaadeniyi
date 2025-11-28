@@ -66,14 +66,12 @@ def clean_data(df):
             print(f"   Found {missing_reviews} empty reviews")
 
          #Standardize text
-        
         text_cols = df_clean.select_dtypes(include=['object']).columns
         for col in text_cols:
             df_clean[col] = df_clean[col].astype(str).str.strip()
             df_clean[col] = df_clean[col].replace('nan', '')
         
         # Remove completely empty rows 
-        
         initial_rows = len(df_clean)
         df_clean = df_clean.dropna(how='all')
         removed_rows = initial_rows - len(df_clean)
@@ -94,12 +92,36 @@ def clean_data(df):
         return df
 
 
-def load_to_staging(sheet, df):
-    """
-    Loads cleaned data to staging worksheet.
+def load_to_staging(spreadsheet, df):
+    """ Loads cleaned data to staging worksheet (idempotent).  """
+    try:
+        staging_worksheet = spreadsheet.worksheet('staging')
+        existing_data = staging_worksheet.get_all_values()
+        
+        if len(existing_data) > 1:  
+            print("   Clearing existing data for idempotent re-run...")
+            staging_worksheet.clear()
+        
+        # Prepare data for upload by Converting DataFrame to list of lists (Google Sheets format)
+        data_to_upload = [df.columns.tolist()] + df.values.tolist()
+        
+        print(f"📝 Writing {len(df)} rows to staging worksheet...")
+        
+        # Update the worksheet
+        staging_worksheet.update(
+            range_name='A1',  # Start at cell A1
+            values=data_to_upload
+        )
+        
+        print(f"✅ Successfully loaded {len(df)} rows to staging!")
+        
+        return True
     
-    Args:
-        sheet: Google Sheet object
-        df (pd.DataFrame): Cleaned data
-    """
-    pass
+    except gspread.exceptions.WorksheetNotFound:
+        print("❌ Error: 'staging' worksheet not found!")
+        print("   Make sure you have a worksheet named exactly 'staging'")
+        return False
+    
+    except Exception as e:
+        print(f"❌ Error loading to staging: {e}")
+        return False

@@ -19,7 +19,7 @@ def connect_to_google_sheets():
         
         # Load credentials 
         creds = ServiceAccountCredentials.from_json_keyfile_name(
-            'automated-review-analysis-801b92f2bb32.json', 
+            'service_account.json', 
             scope
         )
         
@@ -45,9 +45,7 @@ def connect_to_google_sheets():
         return None
 
 def call_groq_llm(review_text):
-    """
-    Sends review text to Groq LLM for sentiment analysis.
-    """
+    """ Sends review text to Groq LLM for sentiment analysis   """
     if not review_text or str(review_text).strip() == '' or str(review_text).lower() == 'nan':
         return {
             'sentiment': 'Neutral',

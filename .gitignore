@@ -28,3 +28,4 @@ htmlcov/
 # Mini tests files
 test_connection.py
 test_groq.py
+test_pipeline_etl.py
